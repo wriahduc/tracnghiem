@@ -1,0 +1,116 @@
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+const TELEGRAM_BOT_TOKEN = "7850658680:AAGaA_pA4cZfpVJXCVORKOa-gmbEJtm8Bjo";
+const TELEGRAM_CHAT_ID = "6388563306";
+
+const slides = [
+  { title: "Phương trình bậc nhất là gì?", content: "Phương trình bậc nhất là phương trình có dạng ax + b = 0, với a và b là các số thực và a ≠ 0." },
+  { title: "Dạng tổng quát của phương trình bậc nhất", content: "Phương trình bậc nhất có dạng tổng quát là ax + b = 0. Ví dụ: 2x - 3 = 0." },
+  { title: "Cách giải phương trình bậc nhất", content: "Để giải phương trình bậc nhất ax + b = 0, ta thực hiện các bước sau: \n1. Chuyển b về vế phải: ax = -b \n2. Chia cả hai vế cho a: x = -b/a." },
+  { title: "Ứng dụng của phương trình bậc nhất", content: "Phương trình bậc nhất được ứng dụng trong nhiều lĩnh vực như toán học, vật lý, kinh tế để giải quyết các bài toán thực tế." },
+  { title: "Bài tập mẫu", content: "Hãy giải phương trình: 3x - 6 = 0. Hướng dẫn: Chuyển -6 sang vế phải và chia cả hai vế cho 3 để tìm x." }
+];
+
+const questions = [
+  { question: "Phương trình nào là bậc nhất?", options: ["x^2 + 2x = 3", "2x + 1 = 0", "x^3 - x = 4"], answer: 1 },
+  { question: "Nghiệm của 2x - 4 = 0 là?", options: ["x = 2", "x = -2", "x = 4"], answer: 0 },
+  { question: "Giá trị của x trong phương trình 5x + 10 = 0?", options: ["x = -2", "x = 2", "x = -5"], answer: 0 },
+  { question: "Phương trình nào không phải là bậc nhất?", options: ["4x - 7 = 0", "x^2 - 3x + 2 = 0", "3x + 1 = 0"], answer: 1 },
+  { question: "Tìm x trong 3x - 9 = 0", options: ["x = 3", "x = -3", "x = 9"], answer: 0 },
+  { question: "Phương trình x + 5 = 0 có nghiệm là?", options: ["x = -5", "x = 5", "x = 0"], answer: 0 },
+  { question: "Nếu 2x = 10 thì x = ?", options: ["x = 2", "x = 5", "x = 10"], answer: 1 },
+  { question: "Giá trị của x khi giải phương trình x - 7 = 3?", options: ["x = 4", "x = 7", "x = 10"], answer: 2 },
+  { question: "Tìm x trong 6x + 18 = 0", options: ["x = -3", "x = 3", "x = -6"], answer: 0 },
+  { question: "Phương trình nào có nghiệm x = 4?", options: ["x - 4 = 0", "2x + 3 = 0", "x^2 - 16 = 0"], answer: 0 }
+];
+
+function sendTelegramMessage(name, score) {
+  const message = `📢 Kết quả kiểm tra\n👤 Họ tên: ${name}\n🎯 Điểm số: ${score} / ${questions.length}`;
+  fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message })
+  });
+}
+
+function Quiz() {
+  const [score, setScore] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [completed, setCompleted] = useState(false);
+  const [name, setName] = useState("");
+
+  const handleAnswer = () => {
+    if (selectedOption === questions[currentQuestion].answer) {
+      setScore(score + 1);
+    }
+    if (currentQuestion + 1 < questions.length) {
+      setCurrentQuestion(currentQuestion + 1);
+      setSelectedOption(null);
+    } else {
+      setCompleted(true);
+      sendTelegramMessage(name, score + 1);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-2xl p-6 bg-white shadow-lg rounded-2xl text-center">
+      {!completed ? (
+        <>
+          <input
+            type="text"
+            placeholder="Nhập họ tên"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mb-4 p-2 border rounded w-full"
+          />
+          <h2 className="text-xl font-semibold mb-4">{questions[currentQuestion].question}</h2>
+          {questions[currentQuestion].options.map((option, index) => (
+            <div key={index} className="mb-2">
+              <Button
+                className={`w-full ${selectedOption === index ? 'bg-blue-500' : ''}`}
+                onClick={() => setSelectedOption(index)}
+              >
+                {option}
+              </Button>
+            </div>
+          ))}
+          <Button className="mt-4" onClick={handleAnswer} disabled={selectedOption === null}>
+            Kiểm tra đáp án
+          </Button>
+        </>
+      ) : (
+        <h2 className="text-xl font-bold">Bạn đã hoàn thành! Điểm số: {score} / {questions.length}</h2>
+      )}
+    </div>
+  );
+}
+
+export default function QuizApp() {
+  const [step, setStep] = useState(0);
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-5">
+      {step < slides.length ? (
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -50 }}
+          className="w-full max-w-2xl p-6 bg-white shadow-lg rounded-2xl"
+        >
+          <h2 className="text-xl font-semibold text-center mb-4">{slides[step].title}</h2>
+          <p className="text-center mb-4">{slides[step].content}</p>
+          <div className="flex justify-between">
+            {step > 0 && <Button onClick={() => setStep(step - 1)}>Quay lại</Button>}
+            {step < slides.length - 1 ? <Button onClick={() => setStep(step + 1)}>Tiếp tục</Button> : <Button onClick={() => setStep(step + 1)}>Làm bài kiểm tra</Button>}
+          </div>
+        </motion.div>
+      ) : (
+        <Quiz />
+      )}
+    </div>
+  );
+}
